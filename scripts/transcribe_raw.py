@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 import argparse
+import os
+import site
 import sys
 from pathlib import Path
 
@@ -20,6 +22,31 @@ AUDIO_EXTENSIONS = {
     ".wma",
 }
 
+DLL_DIRECTORY_HANDLES = []
+
+
+def add_nvidia_dll_directories() -> None:
+    """Add NVIDIA wheel DLL directories on Windows for CTranslate2 GPU inference."""
+    if os.name != "nt" or not hasattr(os, "add_dll_directory"):
+        return
+
+    candidates = []
+    for site_dir in site.getsitepackages():
+        nvidia_dir = Path(site_dir) / "nvidia"
+        candidates.extend(
+            [
+                nvidia_dir / "cublas" / "bin",
+                nvidia_dir / "cudnn" / "bin",
+                nvidia_dir / "cuda_nvrtc" / "bin",
+            ]
+        )
+
+    for path in candidates:
+        if path.exists():
+            path_text = str(path)
+            DLL_DIRECTORY_HANDLES.append(os.add_dll_directory(path_text))
+            os.environ["PATH"] = path_text + os.pathsep + os.environ.get("PATH", "")
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -35,23 +62,20 @@ def parse_args() -> argparse.Namespace:
         dest="raw_dir_option",
         help="Folder containing raw audio files. Overrides the positional raw_dir argument.",
     )
-    parser.add_argument(
-        "--root",
-        help="Deprecated compatibility option: project root containing data/raw and data/text.",
-    )
+    parser.add_argument("--root", help="Data root containing raw. Example: --root F:\\temp\\Audio2Text\\data")
     parser.add_argument("--text-dir-name", default="text", help="Sibling folder name for transcripts.")
     parser.add_argument("--model", default="small", help="Whisper model size or local model path.")
     parser.add_argument("--language", default="zh", help="Language code passed to Whisper. Use auto for detection.")
     parser.add_argument("--overwrite", action="store_true", help="Overwrite existing transcript files.")
     parser.add_argument(
         "--device",
-        default="auto",
-        help="Device for faster-whisper, such as auto, cpu, cuda. openai-whisper ignores auto.",
+        default="cpu",
+        help="Device for faster-whisper, such as cpu or cuda. Default avoids CUDA DLL requirements.",
     )
     parser.add_argument(
         "--compute-type",
-        default="auto",
-        help="Compute type for faster-whisper, such as auto, int8, float16, float32.",
+        default="int8",
+        help="Compute type for faster-whisper, such as int8, float16, or float32.",
     )
     return parser.parse_args()
 
@@ -65,6 +89,9 @@ def discover_audio(raw_dir: Path) -> list[Path]:
 
 
 def build_faster_whisper(model_name: str, device: str, compute_type: str):
+    if device == "cuda":
+        add_nvidia_dll_directories()
+
     from faster_whisper import WhisperModel
 
     kwargs = {}
@@ -125,7 +152,7 @@ def main() -> int:
     elif args.raw_dir:
         raw_dir = Path(args.raw_dir).resolve()
     elif args.root:
-        raw_dir = (Path(args.root).resolve() / "data" / "raw")
+        raw_dir = (Path(args.root).resolve() / "raw")
     else:
         raw_dir = (Path.cwd() / "raw").resolve()
 
@@ -158,7 +185,21 @@ def main() -> int:
 
     for index, (audio_path, output_path) in enumerate(pending, start=1):
         print(f"[{index}/{len(pending)}] transcribing: {audio_path.name}")
-        text = transcribe(audio_path, args.language)
+        try:
+            text = transcribe(audio_path, args.language)
+        except RuntimeError as exc:
+            message = str(exc)
+            if args.device == "cuda" and ("cublas" in message.lower() or "cudnn" in message.lower()):
+                print(
+                    "CUDA runtime DLLs are missing for faster-whisper/CTranslate2.\n"
+                    "Your NVIDIA driver can be present while Python still lacks cuBLAS/cuDNN DLLs.\n"
+                    "Install the runtime packages, then retry:\n"
+                    "  python -m pip install nvidia-cublas-cu12 nvidia-cudnn-cu12\n"
+                    "Or run on CPU:\n"
+                    "  --device cpu --compute-type int8",
+                    file=sys.stderr,
+                )
+            raise
         output_path.write_text(text, encoding="utf-8")
         print(f"wrote: {output_path}")
 
