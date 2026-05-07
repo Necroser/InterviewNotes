@@ -1,25 +1,26 @@
 ---
 name: interview-notes
-description: Transcribe interview recording files and organize interview transcripts into structured Chinese Markdown study notes with model-generated correct answers. Use when working with interview-note projects that have data/raw audio recordings, data/text transcript files, and data/markdown note outputs; when the user asks to run local speech-to-text such as Whisper; or when the user asks to extract interviewer questions and turn them into categorized review notes for internship, project, CS fundamentals, other, and coding questions.
+description: Transcribe interview recording folders and organize interview transcripts into structured Chinese Markdown study notes with model-generated correct answers. Use when the user provides or asks to process a raw audio folder; when Codex should create sibling text and note folders beside raw; when the user asks to run local speech-to-text such as Whisper; or when the user asks to extract interviewer questions and turn them into categorized review notes for internship, project, CS fundamentals, other, and coding questions.
 ---
 
 # Interview Notes
 
 ## Workflow
 
-Use this skill for a workspace shaped like:
+Use this skill for any interview data folder shaped like:
 
 ```text
-data/
-  raw/       audio recordings
-  text/      transcript .txt files
-  markdown/  organized Markdown notes
+some-interview-folder/
+  raw/   audio recordings
+  text/  transcript .txt files, created beside raw
+  note/  organized Markdown study notes, created beside raw
 ```
 
 Run the work in two phases:
 
-1. Transcribe every supported audio file in `data/raw` into a same-name `.txt` file in `data/text`.
-2. Extract interviewer questions from each transcript in `data/text`, then write a same-name `.md` study-note file in `data/markdown`.
+1. Ask for or infer the `raw` folder path. Do not assume the data folders are inside the skill directory.
+2. Transcribe every supported audio file in `raw` into a same-name `.txt` file in the sibling `text` folder.
+3. Extract interviewer questions from each transcript in `text`, then write a same-name `.md` study-note file in the sibling `note` folder.
 
 Preserve existing user files. Skip generated outputs that already exist unless the user asks to overwrite them.
 
@@ -28,30 +29,30 @@ Preserve existing user files. Skip generated outputs that already exist unless t
 Prefer the bundled script:
 
 ```bash
-python interview-notes/scripts/transcribe_raw.py --root .
+python interview-notes/scripts/transcribe_raw.py /path/to/raw
 ```
 
 Useful options:
 
 ```bash
-python interview-notes/scripts/transcribe_raw.py --root . --model medium
-python interview-notes/scripts/transcribe_raw.py --root . --overwrite
-python interview-notes/scripts/transcribe_raw.py --root . --language zh
+python interview-notes/scripts/transcribe_raw.py --raw-dir /path/to/raw --model medium
+python interview-notes/scripts/transcribe_raw.py --raw-dir /path/to/raw --overwrite
+python interview-notes/scripts/transcribe_raw.py --raw-dir /path/to/raw --language zh
 ```
 
 The script:
 
-- Reads audio from `data/raw`.
-- Writes UTF-8 `.txt` files to `data/text`.
+- Reads audio from the provided `raw` folder.
+- Writes UTF-8 `.txt` files to a sibling `text` folder, creating it if needed.
 - Supports common formats such as `.mp3`, `.wav`, `.m4a`, `.flac`, `.ogg`, `.aac`, `.wma`, `.mp4`, and `.mkv`.
 - Tries `faster-whisper` first, then `whisper`.
 - Uses a local model. If model packages or model weights are missing and network access is unavailable, report the blocker and the exact command that failed.
 
-If the project uses another local transcription tool, it is acceptable to use that tool as long as the output contract stays the same: one same-name UTF-8 `.txt` file per audio file in `data/text`.
+If the project uses another local transcription tool, it is acceptable to use that tool as long as the output contract stays the same: one same-name UTF-8 `.txt` file per audio file in the sibling `text` folder.
 
 ## Phase 2: Text To Markdown Study Notes
 
-For each `.txt` file in `data/text`, create or update the same-name `.md` file in `data/markdown`.
+For each `.txt` file in the sibling `text` folder, create or update the same-name `.md` file in the sibling `note` folder. Create `note` if it does not exist.
 
 Use the transcript primarily to identify and normalize the interviewer's questions. The answer below each question should be the correct answer that Codex would recommend for review, not necessarily the answer spoken in the audio.
 
@@ -152,4 +153,4 @@ Before finishing, check:
 - Questions are `###` headings.
 - Answers are correct, structured study notes rather than transcript-faithful oral responses.
 - Answers are Chinese with necessary English proper nouns preserved.
-- The Markdown file is saved under `data/markdown` with the same base name as the source `.txt`.
+- The Markdown file is saved under the sibling `note` folder with the same base name as the source `.txt`.

@@ -8,12 +8,12 @@ __pycache__/
 venv/
 
 # Local interview data, if someone processes recordings inside this repo
-data/raw/*
-data/text/*
-data/markdown/*
-!data/raw/.gitkeep
-!data/text/.gitkeep
-!data/markdown/.gitkeep
+raw/*
+text/*
+note/*
+!raw/.gitkeep
+!text/.gitkeep
+!note/.gitkeep
 
 # OS and editor files
 .DS_Store

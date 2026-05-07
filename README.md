@@ -6,7 +6,7 @@ This repository contains a Codex skill for turning interview recordings into str
 
 The `interview-notes` skill helps Codex:
 
-- Transcribe audio files in `data/raw` into same-name `.txt` files in `data/text`.
+- Transcribe audio files in a provided `raw` folder into same-name `.txt` files in a sibling `text` folder.
 - Extract interviewer questions from transcripts.
 - Generate Chinese Markdown study notes with correct, review-oriented answers.
 - Keep technical proper nouns in English when appropriate, such as `Redis`, `MySQL`, `TCP`, `JVM`, and `React`.
@@ -37,13 +37,13 @@ interview-notes/
   requirements.txt
 ```
 
-The target interview workspace should use this data layout:
+The target interview workspace should use this data layout. The skill can live elsewhere, such as your personal Codex skills directory:
 
 ```text
-data/
-  raw/       audio recordings
-  text/      transcription results
-  markdown/  generated study notes
+some-interview-folder/
+  raw/   audio recordings
+  text/  transcription results, created beside raw
+  note/  generated study notes, created beside raw
 ```
 
 ## Setup
@@ -60,24 +60,24 @@ pip install -r requirements.txt
 
 ## Transcribe Audio
 
-From a workspace that contains `data/raw`, run the script from this skill:
+Pass the folder that contains the raw audio files:
 
 ```powershell
-python path\to\interview-notes\scripts\transcribe_raw.py --root .
+python path\to\interview-notes\scripts\transcribe_raw.py path\to\some-interview-folder\raw
 ```
 
 If this skill is installed under `.codex/skills/interview-notes`, run:
 
 ```powershell
-python .\.codex\skills\interview-notes\scripts\transcribe_raw.py --root .
+python .\.codex\skills\interview-notes\scripts\transcribe_raw.py path\to\some-interview-folder\raw
 ```
 
 Useful options:
 
 ```powershell
-python path\to\interview-notes\scripts\transcribe_raw.py --root . --model medium
-python path\to\interview-notes\scripts\transcribe_raw.py --root . --language zh
-python path\to\interview-notes\scripts\transcribe_raw.py --root . --overwrite
+python path\to\interview-notes\scripts\transcribe_raw.py --raw-dir path\to\some-interview-folder\raw --model medium
+python path\to\interview-notes\scripts\transcribe_raw.py --raw-dir path\to\some-interview-folder\raw --language zh
+python path\to\interview-notes\scripts\transcribe_raw.py --raw-dir path\to\some-interview-folder\raw --overwrite
 ```
 
 ## Use The Skill
@@ -85,9 +85,9 @@ python path\to\interview-notes\scripts\transcribe_raw.py --root . --overwrite
 Ask Codex to use the skill:
 
 ```text
-Use $interview-notes to transcribe data/raw audio and organize data/text into Chinese Markdown study notes.
+Use $interview-notes to process this raw audio folder: path/to/some-interview-folder/raw.
 ```
 
 ## Privacy
 
-Audio, transcripts, and generated notes may contain private interview information. Keep `data/raw`, `data/text`, and `data/markdown` outside this skill repository or ignore them in the workspace where you process interviews.
+Audio, transcripts, and generated notes may contain private interview information. Keep `raw`, `text`, and `note` outside this skill repository or ignore them in the workspace where you process interviews.

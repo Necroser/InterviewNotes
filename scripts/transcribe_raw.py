@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Batch transcribe data/raw audio files into data/text UTF-8 txt files."""
+"""Batch transcribe a raw audio folder into sibling text UTF-8 txt files."""
 
 from __future__ import annotations
 
@@ -23,9 +23,23 @@ AUDIO_EXTENSIONS = {
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Transcribe audio files in data/raw to same-name .txt files in data/text."
+        description="Transcribe audio files in a raw folder to same-name .txt files in its sibling text folder."
     )
-    parser.add_argument("--root", default=".", help="Project root containing data/raw and data/text.")
+    parser.add_argument(
+        "raw_dir",
+        nargs="?",
+        help="Folder containing raw audio files. The sibling text folder is created automatically.",
+    )
+    parser.add_argument(
+        "--raw-dir",
+        dest="raw_dir_option",
+        help="Folder containing raw audio files. Overrides the positional raw_dir argument.",
+    )
+    parser.add_argument(
+        "--root",
+        help="Deprecated compatibility option: project root containing data/raw and data/text.",
+    )
+    parser.add_argument("--text-dir-name", default="text", help="Sibling folder name for transcripts.")
     parser.add_argument("--model", default="small", help="Whisper model size or local model path.")
     parser.add_argument("--language", default="zh", help="Language code passed to Whisper. Use auto for detection.")
     parser.add_argument("--overwrite", action="store_true", help="Overwrite existing transcript files.")
@@ -106,9 +120,16 @@ def get_transcriber(model_name: str, device: str, compute_type: str):
 
 def main() -> int:
     args = parse_args()
-    root = Path(args.root).resolve()
-    raw_dir = root / "data" / "raw"
-    text_dir = root / "data" / "text"
+    if args.raw_dir_option:
+        raw_dir = Path(args.raw_dir_option).resolve()
+    elif args.raw_dir:
+        raw_dir = Path(args.raw_dir).resolve()
+    elif args.root:
+        raw_dir = (Path(args.root).resolve() / "data" / "raw")
+    else:
+        raw_dir = (Path.cwd() / "raw").resolve()
+
+    text_dir = raw_dir.parent / args.text_dir_name
 
     if not raw_dir.exists():
         print(f"Missing raw audio directory: {raw_dir}", file=sys.stderr)
