@@ -41,10 +41,10 @@ python interview-notes/scripts/transcribe_raw.py --root /path/to/some-interview-
 Useful options:
 
 ```bash
-python interview-notes/scripts/transcribe_raw.py --raw-dir /path/to/raw --model medium
+python interview-notes/scripts/transcribe_raw.py --raw-dir /path/to/raw --model large-v3
 python interview-notes/scripts/transcribe_raw.py --raw-dir /path/to/raw --overwrite
 python interview-notes/scripts/transcribe_raw.py --raw-dir /path/to/raw --language zh
-python interview-notes/scripts/transcribe_raw.py --raw-dir /path/to/raw --device cuda --compute-type float16
+python interview-notes/scripts/transcribe_raw.py --raw-dir /path/to/raw --device cpu --compute-type int8 --model small
 ```
 
 The script:
@@ -53,7 +53,7 @@ The script:
 - Writes UTF-8 `.txt` files to a sibling `text` folder, creating it if needed.
 - Supports common formats such as `.mp3`, `.wav`, `.m4a`, `.flac`, `.ogg`, `.aac`, `.wma`, `.mp4`, and `.mkv`.
 - Tries `faster-whisper` first, then `whisper`.
-- Defaults to CPU with `int8` compute to avoid CUDA DLL requirements on machines without a working CUDA runtime. Use `--device cuda --compute-type float16` only when CUDA is installed correctly.
+- Defaults to a high-quality GPU profile: `large-v3` on CUDA with `float16`. Use `--device cpu --compute-type int8 --model small` as a slower compatibility fallback when CUDA is not available.
 - On Windows, `nvidia-smi` can work while Python still cannot load CTranslate2 CUDA dependencies. If GPU mode fails with `cublas64_12.dll is not found`, tell the user to install `nvidia-cublas-cu12` and `nvidia-cudnn-cu12`, then retry with `--device cuda --compute-type float16`. The script automatically adds NVIDIA wheel DLL folders to the current process when CUDA is selected.
 - Uses a local model. If model packages or model weights are missing and network access is unavailable, report the blocker and the exact command that failed.
 

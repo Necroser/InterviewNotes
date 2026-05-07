@@ -81,13 +81,13 @@ python .\.codex\skills\interview-notes\scripts\transcribe_raw.py path\to\some-in
 Useful options:
 
 ```powershell
-python path\to\interview-notes\scripts\transcribe_raw.py --raw-dir path\to\some-interview-folder\raw --model medium
+python path\to\interview-notes\scripts\transcribe_raw.py --raw-dir path\to\some-interview-folder\raw --model large-v3
 python path\to\interview-notes\scripts\transcribe_raw.py --raw-dir path\to\some-interview-folder\raw --language zh
 python path\to\interview-notes\scripts\transcribe_raw.py --raw-dir path\to\some-interview-folder\raw --overwrite
 python path\to\interview-notes\scripts\transcribe_raw.py --raw-dir path\to\some-interview-folder\raw --device cuda --compute-type float16
 ```
 
-The default device is CPU with `int8` compute, which avoids CUDA DLL errors on Windows machines without a complete CUDA runtime.
+The default transcription profile is high quality: `large-v3` on CUDA with `float16`.
 
 To use an NVIDIA GPU with `faster-whisper`, make sure the CUDA runtime DLLs required by CTranslate2 are available to Python. If `--device cuda` fails with `cublas64_12.dll is not found`, install:
 
@@ -98,10 +98,16 @@ python -m pip install nvidia-cublas-cu12 nvidia-cudnn-cu12
 Then run:
 
 ```powershell
-python path\to\interview-notes\scripts\transcribe_raw.py --root path\to\some-interview-folder --device cuda --compute-type float16
+python path\to\interview-notes\scripts\transcribe_raw.py --root path\to\some-interview-folder
 ```
 
 On Windows, the script automatically adds NVIDIA wheel DLL folders such as `nvidia/cublas/bin` and `nvidia/cudnn/bin` to the current Python process when `--device cuda` is used.
+
+For a slower but safer CPU fallback:
+
+```powershell
+python path\to\interview-notes\scripts\transcribe_raw.py --root path\to\some-interview-folder --device cpu --compute-type int8 --model small
+```
 
 ## Use The Skill
 

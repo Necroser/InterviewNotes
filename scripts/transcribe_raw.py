@@ -50,7 +50,8 @@ def add_nvidia_dll_directories() -> None:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Transcribe audio files in a raw folder to same-name .txt files in its sibling text folder."
+        description="Transcribe audio files in a raw folder to same-name .txt files in its sibling text folder.",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
         "raw_dir",
@@ -64,17 +65,17 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--root", help="Data root containing raw. Example: --root F:\\temp\\Audio2Text\\data")
     parser.add_argument("--text-dir-name", default="text", help="Sibling folder name for transcripts.")
-    parser.add_argument("--model", default="small", help="Whisper model size or local model path.")
+    parser.add_argument("--model", default="large-v3", help="Whisper model size or local model path.")
     parser.add_argument("--language", default="zh", help="Language code passed to Whisper. Use auto for detection.")
     parser.add_argument("--overwrite", action="store_true", help="Overwrite existing transcript files.")
     parser.add_argument(
         "--device",
-        default="cpu",
-        help="Device for faster-whisper, such as cpu or cuda. Default avoids CUDA DLL requirements.",
+        default="cuda",
+        help="Device for faster-whisper, such as cuda or cpu.",
     )
     parser.add_argument(
         "--compute-type",
-        default="int8",
+        default="float16",
         help="Compute type for faster-whisper, such as int8, float16, or float32.",
     )
     return parser.parse_args()
@@ -118,7 +119,7 @@ def build_openai_whisper(model_name: str, device: str):
     model = whisper.load_model(model_name, **kwargs)
 
     def transcribe(audio_path: Path, language: str) -> str:
-        kwargs = {"fp16": False}
+        kwargs = {"fp16": device == "cuda"}
         if language != "auto":
             kwargs["language"] = language
         result = model.transcribe(str(audio_path), **kwargs)
@@ -195,8 +196,8 @@ def main() -> int:
                     "Your NVIDIA driver can be present while Python still lacks cuBLAS/cuDNN DLLs.\n"
                     "Install the runtime packages, then retry:\n"
                     "  python -m pip install nvidia-cublas-cu12 nvidia-cudnn-cu12\n"
-                    "Or run on CPU:\n"
-                    "  --device cpu --compute-type int8",
+                    "Or run on CPU with a smaller model:\n"
+                    "  --device cpu --compute-type int8 --model small",
                     file=sys.stderr,
                 )
             raise
