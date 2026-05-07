@@ -1,0 +1,4 @@
+interface:
+  display_name: "Interview Notes"
+  short_description: "Transcribe interview audio and organize Chinese interview notes."
+  default_prompt: "Use $interview-notes to transcribe data/raw audio and organize data/text into markdown interview notes."

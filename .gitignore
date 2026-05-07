@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Local interview data, if someone processes recordings inside this repo
+data/raw/*
+data/text/*
+data/markdown/*
+!data/raw/.gitkeep
+!data/text/.gitkeep
+!data/markdown/.gitkeep
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Logs and temporary output
+*.log
+tmp/
+temp/
